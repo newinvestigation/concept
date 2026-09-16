@@ -1,0 +1,72 @@
+* { box-sizing: border-box; }
+body {
+  width: 380px;
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+  background: #1b1d22;
+  color: #eee;
+  font-size: 13px;
+}
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid #333;
+}
+header h1 { font-size: 14px; margin: 0; }
+header button {
+  background: none;
+  border: none;
+  color: #eee;
+  font-size: 16px;
+  cursor: pointer;
+}
+.block { padding: 12px 14px; border-bottom: 1px solid #2a2d33; }
+.block h2 {
+  font-size: 11px;
+  color: #8fb4ff;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.row { display: flex; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.row label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #aaa; }
+.row label.grow { flex: 1; }
+input, select {
+  padding: 5px 6px;
+  background: #14161a;
+  border: 1px solid #3a3d44;
+  color: #eee;
+  border-radius: 4px;
+  font-size: 12px;
+}
+input[type="number"] { width: 64px; }
+button {
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid #3a3d44;
+  background: #2c2f36;
+  color: #eee;
+  font-size: 12px;
+}
+button:hover { background: #3a3d44; }
+button.primary { background: #3b82f6; border-color: #3b82f6; color: #fff; width: 100%; margin-top: 4px; }
+ul, ol { list-style: none; margin: 0; padding: 0; }
+#windowOrderList li, #layoutList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 6px 4px;
+  border-bottom: 1px solid #2a2d33;
+}
+#windowOrderList li span, #layoutList li span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.empty { color: #777; text-align: center; padding: 8px 0; }
+.hint { color: #888; font-size: 11px; margin: 0 0 8px; }

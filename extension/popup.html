@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>채팅창 타일러</title>
+<link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <h1>채팅창 타일러</h1>
+    <button id="openOptions" title="레이아웃 관리">⚙</button>
+  </header>
+
+  <section class="block">
+    <h2>빠른 타일 배치</h2>
+    <div class="row">
+      <label>행(row)<input type="number" id="quickRows" value="2" min="1" max="8" /></label>
+      <label>열(col)<input type="number" id="quickCols" value="3" min="1" max="8" /></label>
+    </div>
+    <div class="row">
+      <label class="grow">창 제목 필터
+        <input type="text" id="titleFilter" placeholder="예: band.us (비우면 전체 창)" />
+      </label>
+    </div>
+    <div class="row">
+      <label class="grow">배치할 모니터
+        <select id="displaySelect"></select>
+      </label>
+    </div>
+    <button id="quickTileBtn" class="primary">이 조건으로 창 찾기</button>
+  </section>
+
+  <section class="block" id="assignSection" hidden>
+    <h2>배치 순서 확인</h2>
+    <p class="hint">위에서부터 1번, 2번… 구역 순서로 배치됩니다. 화살표로 순서를 바꾸세요.</p>
+    <ol id="windowOrderList"></ol>
+    <button id="confirmApplyBtn" class="primary">이 순서로 적용</button>
+  </section>
+
+  <section class="block">
+    <h2>저장된 레이아웃</h2>
+    <ul id="layoutList"><li class="empty">저장된 레이아웃이 없습니다.</li></ul>
+    <button id="manageLayoutsBtn">레이아웃 관리 열기</button>
+  </section>
+
+  <section class="block">
+    <button id="reapplyLastBtn">마지막 배치 다시 적용 (Ctrl+Shift+L)</button>
+  </section>
+
+  <script src="common.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

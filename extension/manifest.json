@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "채팅창 타일러 (Chat Window Tiler)",
+  "version": "1.0.0",
+  "description": "여러 개의 채팅/브라우저 창을 원하는 비율의 구역으로 한 화면에 자동 정렬합니다.",
+  "permissions": ["system.display", "storage", "tabs"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "채팅창 타일러"
+  },
+  "options_page": "options.html",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "commands": {
+    "apply-last-layout": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+L",
+        "mac": "Command+Shift+L"
+      },
+      "description": "마지막으로 적용한 레이아웃을 다시 적용"
+    }
+  }
+}
