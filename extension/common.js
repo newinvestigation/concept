@@ -55,6 +55,7 @@ const CWT_PRESETS = {
   '2x3': () => cwtGenerateGridZones(2, 3),
   '3x3': () => cwtGenerateGridZones(3, 3),
   '2x4': () => cwtGenerateGridZones(2, 4),
+  '2x8': () => cwtGenerateGridZones(2, 8),
   'cols-2': () => cwtGenerateGridZones(1, 2),
   'cols-3': () => cwtGenerateGridZones(1, 3),
   'cols-4': () => cwtGenerateGridZones(1, 4),

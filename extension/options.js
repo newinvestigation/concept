@@ -9,6 +9,7 @@ const PRESETS = [
   { key: '2x3', label: '2x3' },
   { key: '3x3', label: '3x3' },
   { key: '2x4', label: '2x4' },
+  { key: '2x8', label: '2x8' },
   { key: 'cols-2', label: '세로 2분할' },
   { key: 'cols-3', label: '세로 3분할' },
   { key: 'cols-4', label: '세로 4분할' },
