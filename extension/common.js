@@ -151,19 +151,30 @@ async function cwtApplyAssignment(zones, windowIds, workArea) {
   );
 
   // A window can't always shrink to the exact width we asked for (the
-  // browser may enforce a minimum). If we left every window at its
-  // requested left position regardless, a window that stayed wider than
-  // planned would simply overlap its neighbour. Instead, re-pack each row
-  // left-to-right using the width each window actually ended up with.
+  // browser may enforce a minimum), so the requested widths for a row can
+  // add up to more than the screen is wide. Overlapping windows is fine
+  // (like a fanned-out stack of cards) - what must never happen is a
+  // window's right edge landing past the actual screen edge, invisible and
+  // unreachable. So each row is re-packed left-to-right using the width
+  // each window actually ended up with, and if that total doesn't fit,
+  // the gaps between windows are shrunk evenly (i.e. they overlap evenly)
+  // just enough that the last window's right edge lands exactly on the
+  // screen's right edge.
+  const rightEdge = workArea.left + workArea.width;
   const rows = cwtGroupIntoRows(pairs);
-  let overflowRowCount = 0;
   for (const row of rows) {
     if (row.length < 2) continue;
     row.sort((a, b) => a.zone.x - b.zone.x);
-    let cursor = row[0].rect.left;
-    for (const pair of row) {
-      const actualWidth = (pair.actual && pair.actual.width) || pair.rect.width;
-      const targetLeft = Math.round(cursor);
+    const widths = row.map((pair) => (pair.actual && pair.actual.width) || pair.rect.width);
+    const totalWidth = widths.reduce((sum, w) => sum + w, 0);
+    const startLeft = row[0].rect.left;
+    const overflow = Math.max(0, totalWidth - (rightEdge - startLeft));
+    const overlapPerGap = row.length > 1 ? overflow / (row.length - 1) : 0;
+
+    let cursor = startLeft;
+    for (let i = 0; i < row.length; i++) {
+      const pair = row[i];
+      const targetLeft = Math.max(workArea.left, Math.round(cursor));
       if (targetLeft !== pair.rect.left) {
         try {
           await chrome.windows.update(pair.windowId, { left: targetLeft });
@@ -171,9 +182,8 @@ async function cwtApplyAssignment(zones, windowIds, workArea) {
           // window may have been closed - ignore.
         }
       }
-      cursor += actualWidth;
+      cursor += widths[i] - overlapPerGap;
     }
-    if (cursor > workArea.left + workArea.width + 1) overflowRowCount += 1;
   }
 
   // When zones intentionally overlap (e.g. a taller top row covering the
@@ -188,8 +198,6 @@ async function cwtApplyAssignment(zones, windowIds, workArea) {
       // window may have been closed - ignore.
     }
   }
-
-  return { overflowRowCount };
 }
 
 async function cwtGetLayouts() {

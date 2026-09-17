@@ -72,7 +72,6 @@ async function startAssignment(zones) {
 
   renderOrderList();
   document.getElementById('assignSection').hidden = false;
-  document.getElementById('overflowWarning').hidden = true;
 }
 
 function renderOrderList() {
@@ -136,23 +135,13 @@ async function onConfirmApply() {
   const referenceId = pickReferenceWindowId(currentWindows, currentDisplayId, displays);
   const workArea = await cwtDetectWorkArea(referenceId);
 
-  const { overflowRowCount } = await cwtApplyAssignment(currentZones, windowIds, workArea);
+  await cwtApplyAssignment(currentZones, windowIds, workArea);
   await cwtSetLastApplied({
     zones: currentZones,
     titleFilter: currentTitleFilter,
     displayId: currentDisplayId,
   });
   document.getElementById('assignSection').hidden = true;
-
-  if (overflowRowCount > 0) {
-    showOverflowWarning();
-  }
-}
-
-function showOverflowWarning() {
-  const el = document.getElementById('overflowWarning');
-  if (!el) return;
-  el.hidden = false;
 }
 
 async function onReapplyLast() {

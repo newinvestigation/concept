@@ -70,12 +70,3 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 }
 .empty { color: #777; text-align: center; padding: 8px 0; }
 .hint { color: #888; font-size: 11px; margin: 0 0 8px; }
-.warning {
-  color: #f5b400;
-  font-size: 11px;
-  margin: 8px 0 0;
-  padding: 6px 8px;
-  background: rgba(245, 180, 0, 0.1);
-  border: 1px solid rgba(245, 180, 0, 0.3);
-  border-radius: 4px;
-}
