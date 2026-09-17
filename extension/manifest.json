@@ -4,9 +4,21 @@
   "version": "1.0.0",
   "description": "여러 개의 채팅/브라우저 창을 원하는 비율의 구역으로 한 화면에 자동 정렬합니다.",
   "permissions": ["system.display", "storage", "tabs"],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "채팅창 타일러"
+    "default_title": "채팅창 타일러",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   "options_page": "options.html",
   "background": {
