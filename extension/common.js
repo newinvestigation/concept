@@ -137,6 +137,11 @@ function cwtGroupIntoRows(pairs, epsilon = 0.01) {
 }
 
 async function cwtApplyAssignment(zones, windowIds, workArea) {
+  // A layout change is starting, so any previous lock enforcement must
+  // stop immediately - otherwise the background listener would see these
+  // very moves as "drift" from the old layout and fight the new one.
+  await cwtSetLockState(null);
+
   const count = Math.min(zones.length, windowIds.length);
   const pairs = [];
   for (let i = 0; i < count; i++) {
@@ -177,7 +182,8 @@ async function cwtApplyAssignment(zones, windowIds, workArea) {
       const targetLeft = Math.max(workArea.left, Math.round(cursor));
       if (targetLeft !== pair.rect.left) {
         try {
-          await chrome.windows.update(pair.windowId, { left: targetLeft });
+          const moved = await chrome.windows.update(pair.windowId, { left: targetLeft });
+          if (moved) pair.actual = moved;
         } catch (e) {
           // window may have been closed - ignore.
         }
@@ -198,6 +204,12 @@ async function cwtApplyAssignment(zones, windowIds, workArea) {
       // window may have been closed - ignore.
     }
   }
+
+  const assignments = pairs.map((pair) => {
+    const b = pair.actual || pair.rect;
+    return { windowId: pair.windowId, rect: { left: b.left, top: b.top, width: b.width, height: b.height } };
+  });
+  return { assignments };
 }
 
 async function cwtGetLayouts() {
@@ -213,7 +225,39 @@ async function cwtSetLastApplied(data) {
   await chrome.storage.local.set({ lastApplied: data });
 }
 
+// Puts windows back into a previously-used order (matched by window id),
+// so a manually drag-reordered arrangement survives a later re-apply
+// instead of resetting to id order. Windows that match the current filter
+// but weren't part of the remembered order (e.g. newly opened) are
+// appended at the end, in stable order.
+function cwtReorderByRemembered(windows, rememberedIds) {
+  if (!rememberedIds || !rememberedIds.length) return windows.slice();
+  const byId = new Map(windows.map((w) => [w.id, w]));
+  const ordered = [];
+  for (const id of rememberedIds) {
+    const w = byId.get(id);
+    if (w) {
+      ordered.push(w);
+      byId.delete(id);
+    }
+  }
+  const rest = cwtSortWindowsStable([...byId.values()]);
+  return [...ordered, ...rest];
+}
+
 async function cwtGetLastApplied() {
   const { lastApplied } = await chrome.storage.local.get('lastApplied');
   return lastApplied || null;
+}
+
+// Lock state pins each window to the rect it was placed at, so a
+// background listener (see background.js) can snap it straight back if
+// the user accidentally drags or resizes it.
+async function cwtGetLockState() {
+  const { lockState } = await chrome.storage.local.get('lockState');
+  return lockState || { enabled: false, assignments: [] };
+}
+
+async function cwtSetLockState(state) {
+  await chrome.storage.local.set({ lockState: state || { enabled: false, assignments: [] } });
 }

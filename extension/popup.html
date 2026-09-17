@@ -40,6 +40,10 @@
       <button id="reverseOrderBtn">순서 뒤집기</button>
     </div>
     <ol id="windowOrderList"></ol>
+    <label class="lock-option">
+      <input type="checkbox" id="lockAfterApply" checked />
+      적용 후 위치 고정 (실수로 옮기거나 크기를 바꿔도 자동으로 원래대로 복원)
+    </label>
     <button id="confirmApplyBtn" class="primary">이 순서로 적용</button>
   </section>
 
@@ -47,6 +51,11 @@
     <h2>저장된 레이아웃</h2>
     <ul id="layoutList"><li class="empty">저장된 레이아웃이 없습니다.</li></ul>
     <button id="manageLayoutsBtn">레이아웃 관리 열기</button>
+  </section>
+
+  <section class="block" id="lockStatusSection" hidden>
+    <p class="hint" id="lockStatusText"></p>
+    <button id="unlockBtn">고정 해제</button>
   </section>
 
   <section class="block">

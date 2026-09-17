@@ -15,9 +15,30 @@ async function initPopup() {
   document.getElementById('sortByTitleBtn').addEventListener('click', sortByTitle);
   document.getElementById('sortByPositionBtn').addEventListener('click', sortByPosition);
   document.getElementById('reverseOrderBtn').addEventListener('click', reverseOrder);
+  document.getElementById('unlockBtn').addEventListener('click', onUnlock);
 
-  const saved = await chrome.storage.local.get(['lastTitleFilter']);
+  const saved = await chrome.storage.local.get(['lastTitleFilter', 'lockPreference']);
   if (saved.lastTitleFilter) document.getElementById('titleFilter').value = saved.lastTitleFilter;
+  if (saved.lockPreference === false) document.getElementById('lockAfterApply').checked = false;
+
+  await refreshLockStatus();
+}
+
+async function refreshLockStatus() {
+  const lock = await cwtGetLockState();
+  const section = document.getElementById('lockStatusSection');
+  if (!lock.enabled || !lock.assignments.length) {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+  document.getElementById('lockStatusText').textContent =
+    `배치 고정 중 (${lock.assignments.length}개 창) - 실수로 옮기거나 크기를 바꿔도 자동으로 복원됩니다.`;
+}
+
+async function onUnlock() {
+  await cwtSetLockState(null);
+  await refreshLockStatus();
 }
 
 async function populateDisplays() {
@@ -71,7 +92,9 @@ async function startAssignment(zones) {
 
   const allWindows = await cwtGetAllWindows();
   const filtered = cwtSortWindowsStable(cwtFilterWindows(allWindows, currentTitleFilter));
-  currentWindows = filtered.slice(0, zones.length);
+  const last = await cwtGetLastApplied();
+  const ordered = cwtReorderByRemembered(filtered, last && last.windowOrder);
+  currentWindows = ordered.slice(0, zones.length);
 
   renderOrderList();
   document.getElementById('assignSection').hidden = false;
@@ -172,18 +195,26 @@ function pickReferenceWindowId(windows, displayId, displays) {
 
 async function onConfirmApply() {
   if (!currentWindows.length) return;
+  const lockAfterApply = document.getElementById('lockAfterApply').checked;
+  await chrome.storage.local.set({ lockPreference: lockAfterApply });
+
   const displays = await cwtGetDisplays();
   const windowIds = currentWindows.map((w) => w.id);
   const referenceId = pickReferenceWindowId(currentWindows, currentDisplayId, displays);
   const workArea = await cwtDetectWorkArea(referenceId);
 
-  await cwtApplyAssignment(currentZones, windowIds, workArea);
+  const { assignments } = await cwtApplyAssignment(currentZones, windowIds, workArea);
   await cwtSetLastApplied({
     zones: currentZones,
     titleFilter: currentTitleFilter,
     displayId: currentDisplayId,
+    windowOrder: windowIds,
   });
+  if (lockAfterApply) {
+    await cwtSetLockState({ enabled: true, assignments });
+  }
   document.getElementById('assignSection').hidden = true;
+  await refreshLockStatus();
 }
 
 async function onReapplyLast() {
@@ -192,11 +223,19 @@ async function onReapplyLast() {
   const windows = await cwtGetAllWindows();
   const filtered = cwtSortWindowsStable(cwtFilterWindows(windows, last.titleFilter));
   if (!filtered.length) return;
-  const windowIds = filtered.map((w) => w.id);
+  const ordered = cwtReorderByRemembered(filtered, last.windowOrder);
+  const windowIds = ordered.map((w) => w.id);
   const displays = await cwtGetDisplays();
-  const referenceId = pickReferenceWindowId(filtered, last.displayId, displays);
+  const referenceId = pickReferenceWindowId(ordered, last.displayId, displays);
   const workArea = await cwtDetectWorkArea(referenceId);
-  await cwtApplyAssignment(last.zones, windowIds, workArea);
+  const { assignments } = await cwtApplyAssignment(last.zones, windowIds, workArea);
+  await cwtSetLastApplied({ ...last, windowOrder: windowIds });
+
+  const { lockPreference } = await chrome.storage.local.get('lockPreference');
+  if (lockPreference !== false) {
+    await cwtSetLockState({ enabled: true, assignments });
+  }
+  await refreshLockStatus();
 }
 
 document.addEventListener('DOMContentLoaded', initPopup);
