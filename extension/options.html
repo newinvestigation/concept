@@ -16,6 +16,11 @@
     </div>
 
     <div class="field">
+      <label>행 겹침 % <span class="muted">(위 줄이 아래 줄 주소창 위로 겹치게)</span></label>
+      <input type="number" id="overlapPercent" min="0" max="30" step="1" value="8" />
+    </div>
+
+    <div class="field">
       <label>프리셋으로 시작</label>
       <div class="preset-grid" id="presetGrid"></div>
     </div>
@@ -48,7 +53,7 @@
   </aside>
 
   <main class="stage-wrap">
-    <p class="hint">사각형을 드래그하면 이동, 오른쪽 아래 모서리를 드래그하면 크기 조절됩니다. 클릭하면 선택됩니다. 구역의 번호 순서대로 팝업의 창 목록 1번, 2번…이 배치됩니다.</p>
+    <p class="hint">사각형을 드래그하면 이동, 오른쪽 아래 모서리를 드래그하면 크기 조절됩니다. 클릭하면 선택됩니다. 구역의 번호 순서대로 팝업의 창 목록 1번, 2번…이 배치됩니다. 구역끼리 겹치게 만들면(직접 드래그하거나 "행 겹침 %" 사용) 화면에서 더 위쪽에 있는 구역이 항상 앞으로 오도록 자동 배치됩니다.</p>
     <div id="stage" class="stage"></div>
   </main>
 </div>

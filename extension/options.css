@@ -18,6 +18,7 @@ body {
 .field { margin-bottom: 16px; }
 .field > label:not(.section-label) { display: block; font-size: 12px; color: #aaa; margin-bottom: 4px; }
 .section-label { display: block; font-size: 12px; color: #8fb4ff; margin-bottom: 6px; }
+.muted { color: #777; font-weight: normal; }
 select, input[type="text"], input[type="number"] {
   width: 100%;
   padding: 6px 8px;

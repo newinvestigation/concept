@@ -55,7 +55,9 @@ async function populateLayouts() {
 async function onQuickTile() {
   const rows = parseInt(document.getElementById('quickRows').value, 10) || 1;
   const cols = parseInt(document.getElementById('quickCols').value, 10) || 1;
-  await startAssignment(cwtGenerateGridZones(rows, cols));
+  const overlapPercent = parseFloat(document.getElementById('quickOverlap').value) || 0;
+  const overlap = Math.min(0.3, Math.max(0, overlapPercent / 100));
+  await startAssignment(cwtGenerateGridZones(rows, cols, overlap));
 }
 
 async function startAssignment(zones) {
@@ -105,17 +107,39 @@ function moveWindow(idx, delta) {
   renderOrderList();
 }
 
+// Picks a window already sitting on the target monitor (roughly, using
+// chrome.system.display's bounds just to narrow candidates) to briefly
+// maximize and measure the real usable screen area from.
+function pickReferenceWindowId(windows, displayId, displays) {
+  const display = displays.find((d) => String(d.id) === String(displayId));
+  if (display) {
+    const onDisplay = windows.find((w) => {
+      const cx = w.left + w.width / 2;
+      const cy = w.top + w.height / 2;
+      return (
+        cx >= display.bounds.left &&
+        cx <= display.bounds.left + display.bounds.width &&
+        cy >= display.bounds.top &&
+        cy <= display.bounds.top + display.bounds.height
+      );
+    });
+    if (onDisplay) return onDisplay.id;
+  }
+  return windows[0].id;
+}
+
 async function onConfirmApply() {
   if (!currentWindows.length) return;
   const displays = await cwtGetDisplays();
-  const display = displays.find((d) => String(d.id) === String(currentDisplayId)) || displays[0];
   const windowIds = currentWindows.map((w) => w.id);
+  const referenceId = pickReferenceWindowId(currentWindows, currentDisplayId, displays);
+  const workArea = await cwtDetectWorkArea(referenceId);
 
-  await cwtApplyAssignment(currentZones, windowIds, display.workArea);
+  await cwtApplyAssignment(currentZones, windowIds, workArea);
   await cwtSetLastApplied({
     zones: currentZones,
     titleFilter: currentTitleFilter,
-    displayId: display.id,
+    displayId: currentDisplayId,
   });
   document.getElementById('assignSection').hidden = true;
 }
@@ -123,15 +147,14 @@ async function onConfirmApply() {
 async function onReapplyLast() {
   const last = await cwtGetLastApplied();
   if (!last) return;
-  const displays = await cwtGetDisplays();
-  const display =
-    displays.find((d) => String(d.id) === String(last.displayId)) ||
-    displays.find((d) => d.isPrimary) ||
-    displays[0];
   const windows = await cwtGetAllWindows();
   const filtered = cwtSortWindowsStable(cwtFilterWindows(windows, last.titleFilter));
+  if (!filtered.length) return;
   const windowIds = filtered.map((w) => w.id);
-  await cwtApplyAssignment(last.zones, windowIds, display.workArea);
+  const displays = await cwtGetDisplays();
+  const referenceId = pickReferenceWindowId(filtered, last.displayId, displays);
+  const workArea = await cwtDetectWorkArea(referenceId);
+  await cwtApplyAssignment(last.zones, windowIds, workArea);
 }
 
 document.addEventListener('DOMContentLoaded', initPopup);

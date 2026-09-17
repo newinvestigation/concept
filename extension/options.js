@@ -57,13 +57,19 @@ function updateStageAspect() {
   stageEl.style.height = stageHeight + 'px';
 }
 
+function getOverlapFraction() {
+  const val = parseFloat(document.getElementById('overlapPercent').value);
+  if (!Number.isFinite(val) || val <= 0) return 0;
+  return Math.min(0.3, val / 100);
+}
+
 function renderPresetButtons() {
   const grid = document.getElementById('presetGrid');
   grid.innerHTML = '';
   PRESETS.forEach((p) => {
     const btn = document.createElement('button');
     btn.textContent = p.label;
-    btn.addEventListener('click', () => loadZones(CWT_PRESETS[p.key]()));
+    btn.addEventListener('click', () => loadZones(CWT_PRESETS[p.key](getOverlapFraction())));
     grid.appendChild(btn);
   });
 }

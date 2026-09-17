@@ -35,15 +35,22 @@ function cwtSortWindowsStable(windows) {
   return [...windows].sort((a, b) => a.id - b.id);
 }
 
-function cwtGenerateGridZones(rows, cols) {
+// overlapFraction lets every row but the last grow taller than an even
+// split, extending down into the next row - handy for letting an upper row
+// cover the lower row's title/address bar instead of wasting a full row
+// boundary's worth of screen space on it. 0 means a plain, non-overlapping
+// grid.
+function cwtGenerateGridZones(rows, cols, overlapFraction = 0) {
   const zones = [];
   for (let r = 0; r < rows; r++) {
+    const isLastRow = r === rows - 1;
+    const h = isLastRow ? 1 / rows : 1 / rows + overlapFraction;
     for (let c = 0; c < cols; c++) {
       zones.push({
         x: c / cols,
         y: r / rows,
         w: 1 / cols,
-        h: 1 / rows,
+        h,
       });
     }
   }
@@ -51,11 +58,11 @@ function cwtGenerateGridZones(rows, cols) {
 }
 
 const CWT_PRESETS = {
-  '2x2': () => cwtGenerateGridZones(2, 2),
-  '2x3': () => cwtGenerateGridZones(2, 3),
-  '3x3': () => cwtGenerateGridZones(3, 3),
-  '2x4': () => cwtGenerateGridZones(2, 4),
-  '2x8': () => cwtGenerateGridZones(2, 8),
+  '2x2': (overlap = 0) => cwtGenerateGridZones(2, 2, overlap),
+  '2x3': (overlap = 0) => cwtGenerateGridZones(2, 3, overlap),
+  '3x3': (overlap = 0) => cwtGenerateGridZones(3, 3, overlap),
+  '2x4': (overlap = 0) => cwtGenerateGridZones(2, 4, overlap),
+  '2x8': (overlap = 0) => cwtGenerateGridZones(2, 8, overlap),
   'cols-2': () => cwtGenerateGridZones(1, 2),
   'cols-3': () => cwtGenerateGridZones(1, 3),
   'cols-4': () => cwtGenerateGridZones(1, 4),
@@ -95,13 +102,40 @@ async function cwtMoveWindow(windowId, rect) {
   }
 }
 
+// chrome.system.display reports monitor size in a coordinate space that can
+// disagree with chrome.windows.update's coordinate space when Windows
+// display scaling isn't 100% - the usual symptom is tiled windows running
+// past the right/bottom edge of the real screen. Maximizing an actual
+// window and reading its bounds back sidesteps that mismatch entirely,
+// since both the read and the write go through the same chrome.windows API.
+async function cwtDetectWorkArea(referenceWindowId) {
+  await chrome.windows.update(referenceWindowId, { state: 'maximized' });
+  const maximized = await chrome.windows.get(referenceWindowId);
+  await chrome.windows.update(referenceWindowId, { state: 'normal' });
+  return { left: maximized.left, top: maximized.top, width: maximized.width, height: maximized.height };
+}
+
 async function cwtApplyAssignment(zones, windowIds, workArea) {
   const count = Math.min(zones.length, windowIds.length);
-  const tasks = [];
+  const pairs = [];
   for (let i = 0; i < count; i++) {
-    tasks.push(cwtMoveWindow(windowIds[i], cwtRectFromZone(zones[i], workArea)));
+    pairs.push({ zone: zones[i], windowId: windowIds[i] });
   }
-  await Promise.all(tasks);
+
+  await Promise.all(pairs.map(({ zone, windowId }) => cwtMoveWindow(windowId, cwtRectFromZone(zone, workArea))));
+
+  // When zones intentionally overlap (e.g. a taller top row covering the
+  // row below it), the zone higher on screen (smaller y) should end up on
+  // top. Focusing a window brings it to the front, so focus bottom-most
+  // zones first and top-most zones last.
+  const focusOrder = [...pairs].sort((a, b) => b.zone.y - a.zone.y);
+  for (const { windowId } of focusOrder) {
+    try {
+      await chrome.windows.update(windowId, { focused: true });
+    } catch (e) {
+      // window may have been closed - ignore.
+    }
+  }
 }
 
 async function cwtGetLayouts() {
