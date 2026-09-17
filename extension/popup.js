@@ -12,6 +12,9 @@ async function initPopup() {
   document.getElementById('quickTileBtn').addEventListener('click', onQuickTile);
   document.getElementById('confirmApplyBtn').addEventListener('click', onConfirmApply);
   document.getElementById('reapplyLastBtn').addEventListener('click', onReapplyLast);
+  document.getElementById('sortByTitleBtn').addEventListener('click', sortByTitle);
+  document.getElementById('sortByPositionBtn').addEventListener('click', sortByPosition);
+  document.getElementById('reverseOrderBtn').addEventListener('click', reverseOrder);
 
   const saved = await chrome.storage.local.get(['lastTitleFilter']);
   if (saved.lastTitleFilter) document.getElementById('titleFilter').value = saved.lastTitleFilter;
@@ -74,6 +77,8 @@ async function startAssignment(zones) {
   document.getElementById('assignSection').hidden = false;
 }
 
+let dragSrcIndex = null;
+
 function renderOrderList() {
   const ol = document.getElementById('windowOrderList');
   ol.innerHTML = '';
@@ -83,27 +88,64 @@ function renderOrderList() {
   }
   currentWindows.forEach((win, idx) => {
     const li = document.createElement('li');
+    li.draggable = true;
+    li.dataset.index = String(idx);
+
+    const handle = document.createElement('span');
+    handle.className = 'drag-handle';
+    handle.textContent = '⠿';
+
     const label = document.createElement('span');
+    label.className = 'order-label';
     label.textContent = `${idx + 1}. ${cwtWindowLabel(win)}`;
-    const upBtn = document.createElement('button');
-    upBtn.textContent = '▲';
-    upBtn.disabled = idx === 0;
-    upBtn.addEventListener('click', () => moveWindow(idx, -1));
-    const downBtn = document.createElement('button');
-    downBtn.textContent = '▼';
-    downBtn.disabled = idx === currentWindows.length - 1;
-    downBtn.addEventListener('click', () => moveWindow(idx, 1));
+
+    li.appendChild(handle);
     li.appendChild(label);
-    li.appendChild(upBtn);
-    li.appendChild(downBtn);
+
+    li.addEventListener('dragstart', (e) => {
+      dragSrcIndex = idx;
+      li.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', String(idx));
+    });
+    li.addEventListener('dragend', () => {
+      li.classList.remove('dragging');
+    });
+    li.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      li.classList.add('drag-over');
+    });
+    li.addEventListener('dragleave', () => {
+      li.classList.remove('drag-over');
+    });
+    li.addEventListener('drop', (e) => {
+      e.preventDefault();
+      li.classList.remove('drag-over');
+      const targetIdx = idx;
+      if (dragSrcIndex === null || dragSrcIndex === targetIdx) return;
+      const [moved] = currentWindows.splice(dragSrcIndex, 1);
+      currentWindows.splice(targetIdx, 0, moved);
+      dragSrcIndex = null;
+      renderOrderList();
+    });
+
     ol.appendChild(li);
   });
 }
 
-function moveWindow(idx, delta) {
-  const target = idx + delta;
-  if (target < 0 || target >= currentWindows.length) return;
-  [currentWindows[idx], currentWindows[target]] = [currentWindows[target], currentWindows[idx]];
+function sortByTitle() {
+  currentWindows.sort((a, b) => cwtWindowLabel(a).localeCompare(cwtWindowLabel(b), 'ko'));
+  renderOrderList();
+}
+
+function sortByPosition() {
+  // Reading order: top row first, then left to right within a row.
+  currentWindows.sort((a, b) => a.top - b.top || a.left - b.left);
+  renderOrderList();
+}
+
+function reverseOrder() {
+  currentWindows.reverse();
   renderOrderList();
 }
 

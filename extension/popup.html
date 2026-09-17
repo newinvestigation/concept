@@ -33,7 +33,12 @@
 
   <section class="block" id="assignSection" hidden>
     <h2>배치 순서 확인</h2>
-    <p class="hint">위에서부터 1번, 2번… 구역 순서로 배치됩니다. 화살표로 순서를 바꾸세요.</p>
+    <p class="hint">위에서부터 1번, 2번… 구역 순서로 배치됩니다. 항목을 잡고 드래그해서 순서를 바꾸거나, 아래 버튼으로 한 번에 정렬하세요.</p>
+    <div class="row">
+      <button id="sortByTitleBtn">제목순 정렬</button>
+      <button id="sortByPositionBtn">화면 위치순 정렬</button>
+      <button id="reverseOrderBtn">순서 뒤집기</button>
+    </div>
     <ol id="windowOrderList"></ol>
     <button id="confirmApplyBtn" class="primary">이 순서로 적용</button>
   </section>
